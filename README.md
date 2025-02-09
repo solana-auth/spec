@@ -6,9 +6,12 @@ what we want to build before starting development.
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Features](#features)
-3. [TODO](#todo)
-4. [Contributing](#contributing)
+2. [Scope](#scope)
+3. [Features](#features)
+4. [Authentication Flow](#authentication-flow)
+5. [SDK](#sdk)
+6. [TODO](#todo)
+7. [Contributing](#contributing)
 
 ## Introduction
 
@@ -20,6 +23,21 @@ service that requires users to authenticate with their Solana wallets.
 
 At this point in time we will focus on formalizing existing best practices and standards instead of creating a new
 authentication protocol from scratch.
+
+## Scope
+
+The scope of this specification is limited to verifying the ownership of a Solana identity by signing a message or
+transaction.
+
+This specification does not cover:
+
+- Handling JWT tokens, cookies, or other authentication tokens.
+- Handling sessions.
+- Handling OAuth tokens.
+- Handling sessions.
+
+While these are important topics and needed for a robust authentication solution, they are out of scope for this
+specification. They might be added in the future if there is a need for them or we see patterns emerge.
 
 ## Features
 
@@ -54,6 +72,168 @@ Solana cli.
 
 **Example Use Case:** A script that needs to authenticate users offchain, without relying on a browser extension.
 
+## Authentication Flow
+
+The authentication flow is very similar for all methods. The flow is as follows:
+
+1. The user:
+    1. initiates the authentication flow
+    2. providers their Solana public key
+    3. sends this to the application API
+2. The application
+    1. Creates a verification message using the public key
+    2. Sends the verification message to user
+3. The user:
+    1. signs the verification message
+    2. sends the signed message to the application API
+4. The application API:
+    1. Verifies the signed message
+    2. Returns the authentication result
+5. The user:
+    1. Has now verified that they can sign messages with the provided public key.
+
+## SDK
+
+This section will outline the SDK for the Solana Auth library.
+
+### SDK Configuration
+
+The SDK is configured using the `SolanaAuthConfig` object.
+
+```typescript
+
+export type SolanaAuthMethod =
+    'solana:signIn'
+    | 'solana:signMessage'
+    | 'solana:signTransaction'
+    | 'solana:signOffline'
+
+export interface SolanaAuthConfig {
+    // The methods that the instance will support.
+    methods: SolanaAuthMethod[]
+}
+
+function createSolanaAuth(config: SolanaAuthConfig): SolanaAuthInstance {
+    // Create the instance.
+}
+
+// Example usage.
+const config: SolanaAuthConfig = {
+    // Inidicates the methods that the instance will support.
+    methods: [
+        'solana:signIn',
+        'solana:signMessage',
+        'solana:signTransaction',
+        'solana:signOffline'
+    ],
+}
+
+// With the object, we can create an instance of SolanaAuth.
+const solanaAuth: SolanaAuthInstance = createSolanaAuth(config)
+
+// We use a plugin system to add support for different ways to connect to Solana.
+
+// For example, we can use it with the new @solana/web3.js v2.
+const solanaAuthSolanaRpc = createSolanaAuthSolanaRpc()
+solanaAuth.use(solanaAuthSolanaRpc)
+
+// For example, we can use it with Umi from Metaplex.
+const solanaAuthUmi = createSolanaAuthUmi()
+solanaAuth.use(solanaAuthUmi)
+
+// Or leverate the Umi integration to work with the old 'Connection' object from @solana/web3.js v1.
+const rpc = new Connection('endpoint')
+solanaAuth.use({rpc})
+
+// On the backend
+const message = await solanaAuth.createVerificationMessage({
+    method: 'solana:signIn',
+    publicKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    // more properties
+})
+
+// On the frontend
+const signature = await solanaAuth.signMessage({
+    method: 'solana:signIn',
+    publicKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    message,
+    // more properties
+})
+
+// On the backend
+const verified = await solanaAuth.verifySignedMessage({
+    method: 'solana:signIn',
+    publicKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    message,
+    signature,
+})
+
+```
+
+### 1. Sign in with Solana
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Application
+    participant BrowserExtension
+    participant ApplicationApi
+    participant SolanaAuth
+    User ->> Application: 1. Sign in with Solana
+    Application ->> BrowserExtension: 2. Open browser extension
+    BrowserExtension ->> ApplicationApi: 3. Request authentication
+    ApplicationApi ->> BrowserExtension: 4. Return authentication result
+    BrowserExtension ->> User: 5. Confirm authentication?
+    User ->> BrowserExtension: 6. Authentication confirmed!
+    BrowserExtension ->> ApplicationApi: 7. Send authentication result
+    ApplicationApi ->> SolanaAuth: 8. Verifying authentication result
+    SolanaAuth ->> ApplicationApi: 9. Return authentication result
+    ApplicationApi ->> Application: 10. Return authentication result
+    Application ->> User: 11. Return authentication result
+```
+
+### Methods
+
+```typescript
+// TBD
+```
+
+### 2. Sign in by Signing a Message
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Application
+    participant BrowserExtension
+    participant ApplicationApi
+    participant SolanaAuth
+    User ->> Application: 1. Sign in by signing a message
+    Application ->> BrowserExtension: 2. Open browser extension
+    BrowserExtension ->> ApplicationApi: 3. Request authentication
+    ApplicationApi ->> BrowserExtension: 4. Return authentication result
+    BrowserExtension ->> User: 5. Sign this message?
+    User ->> BrowserExtension: 6. Message signed!
+    BrowserExtension ->> ApplicationApi: 7. Send signed message
+    ApplicationApi ->> SolanaAuth: 8. Verifying signed message
+    SolanaAuth ->> ApplicationApi: 9. Return authentication result
+    ApplicationApi ->> Application: 10. Return authentication result
+    Application ->> User: 11. Return authentication result
+  ```
+
+### 3. Sign in by Signing a Transaction
+
+```typescript
+// TBD
+```
+
+### 4. Sign in by Signing an Offchain Message
+
+```typescript
+// TBD
+```
+
 ## TODO
 
 This list is not exhaustive and is subject to change.
@@ -61,7 +241,7 @@ This list is not exhaustive and is subject to change.
 - [ ] Create specification.
     - [x] Setup repository and basic document structure.
     - [x] Specify features.
-    - [ ] Specify api for the library based on the features.
+    - [ ] Specify api for the SDK based on the features.
 - [ ] Create prototype to verify the specification.
     - [ ] Quick and dirty prototype of the library.
     - [ ] Example application that consumes the library.
