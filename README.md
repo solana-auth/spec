@@ -34,7 +34,6 @@ This specification does not cover:
 - Handling JWT tokens, cookies, or other authentication tokens.
 - Handling sessions.
 - Handling OAuth tokens.
-- Handling sessions.
 
 While these are important topics and needed for a robust authentication solution, they are out of scope for this
 specification. They might be added in the future if there is a need for them or we see patterns emerge.
@@ -77,18 +76,18 @@ Solana cli.
 The authentication flow is very similar for all methods. The flow is as follows:
 
 1. The user:
-    1. initiates the authentication flow
-    2. providers their Solana public key
-    3. sends this to the application API
-2. The application
-    1. Creates a verification message using the public key
-    2. Sends the verification message to user
+    1. Initiates the authentication flow.
+    2. Provides their Solana public key.
+    3. Sends this to the application API.
+2. The application:
+    1. Creates a verification message using the public key.
+    2. Sends the verification message to user.
 3. The user:
-    1. signs the verification message
-    2. sends the signed message to the application API
+    1. Signs the verification message.
+    2. Sends the signed message to the application API.
 4. The application API:
-    1. Verifies the signed message
-    2. Returns the authentication result
+    1. Verifies the signed message.
+    2. Returns the authentication result.
 5. The user:
     1. Has now verified that they can sign messages with the provided public key.
 
@@ -96,7 +95,7 @@ The authentication flow is very similar for all methods. The flow is as follows:
 
 This section will outline the SDK for the Solana Auth library.
 
-### SDK Configuration
+### SDK configuration and instantiation
 
 The SDK is configured using the `SolanaAuthConfig` object.
 
@@ -241,7 +240,7 @@ This list is not exhaustive and is subject to change.
 - [ ] Create specification.
     - [x] Setup repository and basic document structure.
     - [x] Specify features.
-    - [ ] Specify api for the SDK based on the features.
+    - [ ] Specify API for the SDK based on the features.
 - [ ] Create prototype to verify the specification.
     - [ ] Quick and dirty prototype of the library.
     - [ ] Example application that consumes the library.
